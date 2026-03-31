@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jira Ticket Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --surface3: #21262d;
+    --border: #30363d;
+    --border-active: #388bfd;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --text-faint: #484f58;
+    --accent: #388bfd;
+    --accent-glow: rgba(56,139,253,0.15);
+    --accent2: #56d364;
+    --accent3: #f78166;
+    --warn: #e3b341;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --display: 'Syne', sans-serif;
+    --transition: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 24px 20px 48px;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-mark {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, #388bfd 0%, #56d364 100%);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 15px;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(56,139,253,0.3);
+  }
+  .header-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+  .header-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-top: 1px;
+  }
+  .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  /* ── Keyboard Shortcut Badge ── */
+  .kbd {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    vertical-align: middle;
+  }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .toolbar-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* ── Template Dropdown ── */
+  .template-select-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+    max-width: 360px;
+  }
+  .template-select-wrap::after {
+    content: '▾';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+    font-size: 12px;
+  }
+  select.template-select {
+    width: 100%;
+    appearance: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 36px 8px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+  }
+  select.template-select:hover { border-color: #484f58; }
+  select.template-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+  .toolbar-spacer { flex: 1; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all var(--transition);
+    white-space: nowrap;
+    outline: none;
+    position: relative;
+  }
+  .btn:focus-visible { box-shadow: 0 0 0 3px var(--accent-glow); }
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-muted);
+  }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); border-color: #484f58; }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: #58a6ff; box-shadow: 0 0 16px rgba(56,139,253,0.35); }
+  .btn-success {
+    background: transparent;
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+  .btn-success:hover { background: rgba(86,211,100,0.1); box-shadow: 0 0 14px rgba(86,211,100,0.2); }
+  .btn-danger {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-muted);
+  }
+  .btn-danger:hover { border-color: var(--accent3); color: var(--accent3); background: rgba(247,129,102,0.07); }
+  .btn svg { flex-shrink: 0; }
+
+  /* ── Copy feedback ── */
+  .copy-feedback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent2);
+    border-radius: inherit;
+    color: #0d1117;
+    font-weight: 600;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    gap: 5px;
+  }
+  .copy-feedback.show { opacity: 1; }
+
+  /* ── Layout ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+  /* ── Panel ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .panel-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .panel-title {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.2px;
+    flex: 1;
+  }
+  .panel-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+  .panel-body { padding: 20px; }
+
+  /* ── Subject Line ── */
+  .subject-display {
+    background: var(--surface3);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    line-height: 1.5;
+    transition: all var(--transition);
+    min-height: 44px;
+    word-break: break-word;
+  }
+  .subject-display:empty::before { content: 'Subject line will appear here…'; color: var(--text-faint); }
+
+  /* ── Form Fields ── */
+  .field-group { margin-bottom: 18px; }
+  .field-group:last-child { margin-bottom: 0; }
+  .field-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 7px;
+  }
+  .field-label-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.3px;
+  }
+  .field-label-text .req { color: var(--accent3); margin-left: 3px; }
+  .char-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    transition: color var(--transition);
+  }
+  .char-count.warn { color: var(--warn); }
+  .char-count.over { color: var(--accent3); }
+
+  input[type="text"], textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 9px 12px;
+    transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    outline: none;
+    resize: vertical;
+    line-height: 1.55;
+  }
+  input[type="text"]:hover, textarea:hover { border-color: #484f58; }
+  input[type="text"]:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+    background: var(--surface3);
+  }
+  input[type="text"].error, textarea.error { border-color: var(--accent3); box-shadow: 0 0 0 3px rgba(247,129,102,0.15); }
+  input::placeholder, textarea::placeholder { color: var(--text-faint); }
+  textarea { min-height: 80px; }
+  textarea.tall { min-height: 110px; }
+
+  .field-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 5px;
+    font-style: italic;
+  }
+
+  /* ── Priority / Type selectors ── */
+  .pill-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .pill {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    transition: all var(--transition);
+    font-family: var(--sans);
+  }
+  .pill:hover { border-color: #484f58; color: var(--text); }
+  .pill.active-critical { background: rgba(247,129,102,0.15); border-color: var(--accent3); color: var(--accent3); }
+  .pill.active-high { background: rgba(227,179,65,0.15); border-color: var(--warn); color: var(--warn); }
+  .pill.active-medium { background: rgba(56,139,253,0.15); border-color: var(--accent); color: var(--accent); }
+  .pill.active-low { background: rgba(86,211,100,0.12); border-color: var(--accent2); color: var(--accent2); }
+  .pill.active-bug { background: rgba(247,129,102,0.15); border-color: var(--accent3); color: var(--accent3); }
+  .pill.active-feature { background: rgba(86,211,100,0.12); border-color: var(--accent2); color: var(--accent2); }
+  .pill.active-task { background: rgba(56,139,253,0.15); border-color: var(--accent); color: var(--accent); }
+  .pill.active-improvement { background: rgba(227,179,65,0.15); border-color: var(--warn); color: var(--warn); }
+
+  /* ── Output Preview ── */
+  .output-pre {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.75;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 300px;
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  .output-pre::-webkit-scrollbar { width: 6px; }
+  .output-pre::-webkit-scrollbar-track { background: transparent; }
+  .output-pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Syntax coloring in output */
+  .out-label { color: var(--accent); font-weight: 500; }
+  .out-value { color: var(--text); }
+  .out-section { color: var(--accent2); }
+  .out-header { color: var(--warn); font-weight: 500; }
+  .out-divider { color: var(--text-faint); }
+  .out-empty { color: var(--text-faint); font-style: italic; }
+  .out-meta { color: var(--text-muted); }
+  .out-priority-critical { color: var(--accent3); font-weight: 600; }
+  .out-priority-high { color: var(--warn); font-weight: 600; }
+  .out-priority-medium { color: var(--accent); font-weight: 600; }
+  .out-priority-low { color: var(--accent2); font-weight: 600; }
+
+  /* ── Validation Banner ── */
+  .validation-banner {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(247,129,102,0.08);
+    border: 1px solid rgba(247,129,102,0.3);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    color: var(--accent3);
+  }
+  .validation-banner.show { display: flex; }
+
+  /* ── Toast ── */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    transform: translateY(16px);
+    opacity: 0;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: auto;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success .toast-icon { color: var(--accent2); }
+  .toast.warn .toast-icon { color: var(--warn); }
+  .toast.info .toast-icon { color: var(--accent); }
+
+  /* ── Auto-save indicator ── */
+  .autosave-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text-faint);
+    display: inline-block;
+    transition: background 0.4s;
+    flex-shrink: 0;
+  }
+  .autosave-dot.saved { background: var(--accent2); }
+  .autosave-dot.saving { background: var(--warn); animation: pulse 0.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ── Section divider ── */
+  .section-sep {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+    margin: 20px 0;
+  }
+
+  /* ── Template Description ── */
+  .template-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 10px 14px;
+    background: var(--surface3);
+    border-radius: var(--radius);
+    margin-bottom: 18px;
+    border-left: 3px solid var(--accent);
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* ── Tips Section ── */
+  .tips-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  .tip-chip {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* ── Scroll to top fade ── */
+  .fade-in { animation: fadeIn 0.35s ease both; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── Template-specific hidden fields ── */
+  .field-conditional { display: none; }
+  .field-conditional.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ HEADER ════════════════════ -->
+<div class="header fade-in">
+  <div class="header-left">
+    <div class="logo-mark">JT</div>
+    <div>
+      <div class="header-title">Jira Ticket Builder</div>
+      <div class="header-sub">Fill the form · Copy the output · Paste in Jira</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <span class="autosave-dot saved" id="autosaveDot" title="Auto-saved"></span>
+    <span style="font-size:11px;color:var(--text-muted)" id="autosaveLabel">Saved</span>
+  </div>
+</div>
+
+<!-- ════════════════════ TOOLBAR ════════════════════ -->
+<div class="toolbar fade-in" style="animation-delay:.05s">
+  <span class="toolbar-label">Template</span>
+  <div class="template-select-wrap">
+    <select class="template-select" id="templateSelect" onchange="switchTemplate()">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">✨ Feature Request</option>
+      <option value="task">📋 General Task</option>
+      <option value="access">🔐 Access / Permission Request</option>
+      <option value="data">📊 Data / Reporting Request</option>
+    </select>
+  </div>
+  <div class="toolbar-spacer"></div>
+  <button class="btn btn-ghost" onclick="clearForm()" title="Clear all fields (Alt+R)">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.78"/></svg>
+    Clear <span class="kbd">Alt+R</span>
+  </button>
+  <button class="btn btn-success" id="copyBtn" onclick="copyOutput()" title="Copy ticket (Ctrl+Shift+C)">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    Copy Ticket <span class="kbd">Ctrl+⇧+C</span>
+    <div class="copy-feedback" id="copyFeedback">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Copied!
+    </div>
+  </button>
+</div>
+
+<!-- ════════════════════ MAIN GRID ════════════════════ -->
+<div class="main-grid fade-in" style="animation-delay:.1s">
+
+  <!-- ── LEFT: FORM PANEL ── -->
+  <div class="panel" id="formPanel">
+    <div class="panel-header">
+      <div class="panel-dot" style="background:var(--accent)"></div>
+      <div class="panel-title" id="formPanelTitle">Bug Report</div>
+      <div class="panel-badge" style="border-color:var(--accent);color:var(--accent)" id="templateBadge">BUG</div>
+    </div>
+    <div class="panel-body">
+
+      <!-- Template description -->
+      <div class="template-desc" id="templateDesc">
+        📌 For reporting unexpected behavior, errors, or system failures. Fill in all fields for fastest resolution.
+      </div>
+
+      <!-- Validation Banner -->
+      <div class="validation-banner" id="validationBanner">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="validationMsg">Please fill in the required fields before copying.</span>
+      </div>
+
+      <!-- ▸ CLIENT / BU -->
+      <div class="field-group">
+        <div class="field-label">
+          <span class="field-label-text">CLIENT / BU<span class="req">*</span></span>
+          <span class="char-count" id="cc_client">0 / 50</span>
+        </div>
+        <input type="text" id="f_client" placeholder="e.g. Acme Corp – Marketing BU" maxlength="50"
+          oninput="updateAll();countChars('f_client','cc_client',50)" />
+        <div class="field-hint">Business unit or client abbreviation that will appear in the subject line.</div>
+      </div>
+
+      <!-- ▸ BRIEF DESCRIPTION -->
+      <div class="field-group">
+        <div class="field-label">
+          <span class="field-label-text">BRIEF ISSUE DESCRIPTION<span class="req">*</span></span>
+          <span class="char-count" id="cc_brief">0 / 80</span>
+        </div>
+        <input type="text" id="f_brief" placeholder="e.g. Export button throws 500 error on filtered view" maxlength="80"
+          oninput="updateAll();countChars('f_brief','cc_brief',80)" />
+      </div>
+
+      <!-- ▸ PRIORITY & TYPE row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+        <div>
+          <div class="field-label"><span class="field-label-text">PRIORITY</span></div>
+          <div class="pill-row" id="priorityPills">
+            <button class="pill" onclick="setPriority('Critical')">🔴 Critical</button>
+            <button class="pill" onclick="setPriority('High')">🟠 High</button>
+            <button class="pill active-medium" onclick="setPriority('Medium')">🔵 Medium</button>
+            <button class="pill" onclick="setPriority('Low')">🟢 Low</button>
+          </div>
+        </div>
+        <div id="typeSection">
+          <div class="field-label"><span class="field-label-text">TYPE</span></div>
+          <div class="pill-row" id="typePills">
+            <button class="pill active-bug" onclick="setType('Bug')">Bug</button>
+            <button class="pill" onclick="setType('Feature')">Feature</button>
+            <button class="pill" onclick="setType('Task')">Task</button>
+            <button class="pill" onclick="setType('Improvement')">Improvement</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-sep"></div>
+
+      <!-- ▸ PROBLEM DESCRIPTION -->
+      <div class="field-group">
+        <div class="field-label">
+          <span class="field-label-text">PROBLEM DESCRIPTION<span class="req">*</span></span>
+          <span class="char-count" id="cc_prob">0 / 1000</span>
+        </div>
+        <textarea class="tall" id="f_problem" placeholder="Describe the problem clearly. What is happening vs. what should happen?"
+          oninput="updateAll();countChars('f_problem','cc_prob',1000)"></textarea>
+      </div>
+
+      <!-- ▸ USE CASE -->
+      <div class="field-group">
+        <div class="field-label">
+          <span class="field-label-text">USE CASE / WORKFLOW OR STEPS IMPACTED<span class="req">*</span></span>
+          <span class="char-count" id="cc_usecase">0 / 600</span>
+        </div>
+        <textarea id="f_usecase" placeholder="Describe the workflow affected and steps to reproduce the issue (Step 1: … Step 2: …)"
+          oninput="updateAll();countChars('f_usecase','cc_usecase',600)"></textarea>
+      </div>
+
+      <!-- ▸ BUSINESS IMPACT -->
+      <div class="field-group">
+        <div class="field-label">
+          <span class="field-label-text">REASON FOR REQUEST / BUSINESS IMPACT<span class="req">*</span></span>
+          <span class="char-count" id="cc_impact">0 / 500</span>
+        </div>
+        <textarea id="f_impact" placeholder="What is the business impact? Who is affected and how urgently?"
+          oninput="updateAll();countChars('f_impact','cc_impact',500)"></textarea>
+      </div>
+
+      <!-- ▸ ATTACHMENTS -->
+      <div class="field-group">
+        <div class="field-label">
+          <span class="field-label-text">ATTACHMENT(S) / SCREENSHOT(S)</span>
+        </div>
+        <textarea id="f_attachments" placeholder="List attachment names or URLs here. One per line." rows="3"
+          oninput="updateAll()"></textarea>
+        <div class="field-hint">Optional — paste file names, Confluence links, or screenshot URLs.</div>
+      </div>
+
+      <!-- ▸ CONDITIONAL: Steps to Reproduce (Bug only) -->
+      <div class="field-group field-conditional" id="cond_repro">
+        <div class="field-label">
+          <span class="field-label-text">STEPS TO REPRODUCE</span>
+          <span class="char-count" id="cc_repro">0 / 600</span>
+        </div>
+        <textarea id="f_repro" placeholder="1. Navigate to…&#10;2. Click on…&#10;3. Observe that…"
+          oninput="updateAll();countChars('f_repro','cc_repro',600)"></textarea>
+      </div>
+
+      <!-- ▸ CONDITIONAL: Expected vs Actual (Bug only) -->
+      <div class="field-group field-conditional" id="cond_expected">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div class="field-label"><span class="field-label-text">EXPECTED RESULT</span></div>
+            <textarea id="f_expected" rows="3" placeholder="What should happen?" oninput="updateAll()"></textarea>
+          </div>
+          <div>
+            <div class="field-label"><span class="field-label-text">ACTUAL RESULT</span></div>
+            <textarea id="f_actual" rows="3" placeholder="What actually happened?" oninput="updateAll()"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▸ CONDITIONAL: Environment (Bug only) -->
+      <div class="field-group field-conditional" id="cond_env">
+        <div class="field-label">
+          <span class="field-label-text">ENVIRONMENT / BROWSER</span>
+        </div>
+        <input type="text" id="f_env" placeholder="e.g. Chrome 124 / Windows 11 / Production" oninput="updateAll()" />
+      </div>
+
+      <!-- ▸ CONDITIONAL: Acceptance Criteria (Feature/Task) -->
+      <div class="field-group field-conditional" id="cond_accept">
+        <div class="field-label">
+          <span class="field-label-text">ACCEPTANCE CRITERIA</span>
+          <span class="char-count" id="cc_accept">0 / 800</span>
+        </div>
+        <textarea class="tall" id="f_accept" placeholder="Define done. List testable acceptance criteria (Given / When / Then or bullet list)."
+          oninput="updateAll();countChars('f_accept','cc_accept',800)"></textarea>
+      </div>
+
+      <!-- ▸ CONDITIONAL: Access Details -->
+      <div class="field-group field-conditional" id="cond_access">
+        <div class="field-label">
+          <span class="field-label-text">ACCESS NEEDED</span>
+        </div>
+        <input type="text" id="f_access" placeholder="e.g. Read access to Salesforce Production – Reports module" oninput="updateAll()" />
+      </div>
+
+      <!-- ▸ CONDITIONAL: Reporting Fields -->
+      <div class="field-group field-conditional" id="cond_report">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div class="field-label"><span class="field-label-text">DATA SOURCE(S)</span></div>
+            <input type="text" id="f_datasource" placeholder="e.g. Salesforce, Snowflake" oninput="updateAll()" />
+          </div>
+          <div>
+            <div class="field-label"><span class="field-label-text">REQUIRED BY DATE</span></div>
+            <input type="text" id="f_reqdate" placeholder="e.g. 2026-04-15" oninput="updateAll()" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ▸ ADDITIONAL NOTES -->
+      <div class="section-sep"></div>
+      <div class="field-group">
+        <div class="field-label">
+          <span class="field-label-text">ADDITIONAL NOTES</span>
+        </div>
+        <textarea id="f_notes" placeholder="Anything else the assignee should know?" rows="3" oninput="updateAll()"></textarea>
+      </div>
+
+      <!-- ▸ REPORTED BY -->
+      <div class="field-group">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div class="field-label"><span class="field-label-text">REPORTED BY</span></div>
+            <input type="text" id="f_reporter" placeholder="Your name" oninput="updateAll()" />
+          </div>
+          <div>
+            <div class="field-label"><span class="field-label-text">DATE</span></div>
+            <input type="text" id="f_date" placeholder="Auto-filled" oninput="updateAll()" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── RIGHT: PREVIEW PANEL ── -->
+  <div class="panel" id="previewPanel">
+    <div class="panel-header">
+      <div class="panel-dot" style="background:var(--accent2)"></div>
+      <div class="panel-title">Formatted Output Preview</div>
+      <div class="panel-badge" style="border-color:var(--text-faint);color:var(--text-muted)">READ-ONLY</div>
+    </div>
+    <div class="panel-body" style="padding:16px">
+      <div class="output-pre" id="outputPreview">
+        <!-- Populated by JS -->
+      </div>
+      <div class="tips-row">
+        <div class="tip-chip">💡 Live preview</div>
+        <div class="tip-chip">📋 Plain-text format</div>
+        <div class="tip-chip">🔒 Paste-ready for Jira</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ TOAST CONTAINER ════════════════════ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ════════════════════ JAVASCRIPT ════════════════════ -->
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let priority = 'Medium';
+let issueType = 'Bug';
+let currentTemplate = 'bug';
+let autosaveTimer = null;
+const TODAY = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+// ─── Template Configs ─────────────────────────────────────────────────────────
+const TEMPLATES = {
+  bug: {
+    label: 'Bug Report',
+    badge: 'BUG',
+    badgeColor: 'var(--accent3)',
+    desc: '📌 For reporting unexpected behavior, errors, or system failures. Fill in all fields for fastest resolution.',
+    conditionals: ['cond_repro','cond_expected','cond_env'],
+    defaultType: 'Bug',
+    requiredFields: ['f_client','f_brief','f_problem','f_usecase','f_impact']
+  },
+  feature: {
+    label: 'Feature Request',
+    badge: 'FEAT',
+    badgeColor: 'var(--accent2)',
+    desc: '✨ For requesting new functionality or enhancements. Be specific about the desired outcome and business value.',
+    conditionals: ['cond_accept'],
+    defaultType: 'Feature',
+    requiredFields: ['f_client','f_brief','f_problem','f_usecase','f_impact']
+  },
+  task: {
+    label: 'General Task',
+    badge: 'TASK',
+    badgeColor: 'var(--accent)',
+    desc: '📋 For tracking general work items, configurations, or operational tasks. Include clear acceptance criteria.',
+    conditionals: ['cond_accept'],
+    defaultType: 'Task',
+    requiredFields: ['f_client','f_brief','f_problem','f_impact']
+  },
+  access: {
+    label: 'Access / Permission Request',
+    badge: 'ACCESS',
+    badgeColor: 'var(--warn)',
+    desc: '🔐 For requesting new or updated system access, roles, or permissions. Justify the business need.',
+    conditionals: ['cond_access'],
+    defaultType: 'Task',
+    requiredFields: ['f_client','f_brief','f_impact','f_access']
+  },
+  data: {
+    label: 'Data / Reporting Request',
+    badge: 'DATA',
+    badgeColor: '#a371f7',
+    desc: '📊 For requesting new reports, dashboards, or data extracts. Specify source systems and required date.',
+    conditionals: ['cond_report'],
+    defaultType: 'Task',
+    requiredFields: ['f_client','f_brief','f_impact']
+  }
+};
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  document.getElementById('f_date').value = TODAY;
+  loadFromStorage();
+  updateAll();
+  setPriority('Medium', true);
+  setType(TEMPLATES[currentTemplate].defaultType, true);
+};
+
+// ─── Template Switching ───────────────────────────────────────────────────────
+function switchTemplate() {
+  currentTemplate = document.getElementById('templateSelect').value;
+  const tmpl = TEMPLATES[currentTemplate];
+
+  document.getElementById('formPanelTitle').textContent = tmpl.label;
+  document.getElementById('templateBadge').textContent = tmpl.badge;
+  document.getElementById('templateBadge').style.borderColor = tmpl.badgeColor;
+  document.getElementById('templateBadge').style.color = tmpl.badgeColor;
+  document.getElementById('templateDesc').textContent = tmpl.desc;
+
+  // Show/hide conditional fields
+  document.querySelectorAll('.field-conditional').forEach(el => el.classList.remove('active'));
+  tmpl.conditionals.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+  });
+
+  // Set default type
+  setType(tmpl.defaultType, true);
+  updateAll();
+  showToast(`Template switched to "${tmpl.label}"`, 'info');
+}
+
+// ─── Priority ─────────────────────────────────────────────────────────────────
+function setPriority(p, silent) {
+  priority = p;
+  document.querySelectorAll('#priorityPills .pill').forEach(btn => {
+    btn.className = 'pill';
+    if (btn.textContent.includes(p)) {
+      btn.classList.add('active-' + p.toLowerCase());
+    }
+  });
+  if (!silent) updateAll();
+}
+
+// ─── Type ─────────────────────────────────────────────────────────────────────
+function setType(t, silent) {
+  issueType = t;
+  document.querySelectorAll('#typePills .pill').forEach(btn => {
+    btn.className = 'pill';
+    if (btn.textContent.trim() === t) {
+      btn.classList.add('active-' + t.toLowerCase());
+    }
+  });
+  if (!silent) updateAll();
+}
+
+// ─── Get Field Value ──────────────────────────────────────────────────────────
+function fv(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+// ─── Subject Builder ──────────────────────────────────────────────────────────
+function buildSubject() {
+  const client = fv('f_client') || '[Client BU]';
+  const brief = fv('f_brief') || 'Brief Issue Description';
+  return `[${client}] - ${brief}`;
+}
+
+// ─── Output Builder ───────────────────────────────────────────────────────────
+function buildPlainText() {
+  const tmpl = TEMPLATES[currentTemplate];
+  const subject = buildSubject();
+  const div = '─'.repeat(60);
+
+  let lines = [];
+  lines.push(`SUBJECT: ${subject}`);
+  lines.push(div);
+  lines.push(`Template  : ${tmpl.label}`);
+  lines.push(`Priority  : ${priority}`);
+  lines.push(`Type      : ${issueType}`);
+  lines.push(`Reporter  : ${fv('f_reporter') || '—'}`);
+  lines.push(`Date      : ${fv('f_date') || TODAY}`);
+  lines.push(div);
+  lines.push('');
+  lines.push('__Problem Description__:');
+  lines.push(fv('f_problem') || '(not provided)');
+  lines.push('');
+  lines.push('__Use Case / Workflow or Steps Impacted__:');
+  lines.push(fv('f_usecase') || '(not provided)');
+  lines.push('');
+  lines.push('__Reason for Request / Business Impact__:');
+  lines.push(fv('f_impact') || '(not provided)');
+  lines.push('');
+
+  // Bug-specific
+  if (currentTemplate === 'bug') {
+    const repro = fv('f_repro');
+    if (repro) {
+      lines.push('__Steps to Reproduce__:');
+      lines.push(repro);
+      lines.push('');
+    }
+    const exp = fv('f_expected'), act = fv('f_actual');
+    if (exp || act) {
+      lines.push('__Expected Result__:');
+      lines.push(exp || '—');
+      lines.push('');
+      lines.push('__Actual Result__:');
+      lines.push(act || '—');
+      lines.push('');
+    }
+    const env = fv('f_env');
+    if (env) {
+      lines.push('__Environment / Browser__:');
+      lines.push(env);
+      lines.push('');
+    }
+  }
+
+  // Feature / Task acceptance
+  if (['feature','task'].includes(currentTemplate)) {
+    const accept = fv('f_accept');
+    if (accept) {
+      lines.push('__Acceptance Criteria__:');
+      lines.push(accept);
+      lines.push('');
+    }
+  }
+
+  // Access
+  if (currentTemplate === 'access') {
+    const access = fv('f_access');
+    if (access) {
+      lines.push('__Access Needed__:');
+      lines.push(access);
+      lines.push('');
+    }
+  }
+
+  // Data
+  if (currentTemplate === 'data') {
+    const ds = fv('f_datasource'), rd = fv('f_reqdate');
+    if (ds) { lines.push('__Data Source(s)__:'); lines.push(ds); lines.push(''); }
+    if (rd) { lines.push('__Required By Date__:'); lines.push(rd); lines.push(''); }
+  }
+
+  lines.push('__Attachment(s) / Screenshot(s)__:');
+  lines.push(fv('f_attachments') || '(none)');
+  lines.push('');
+
+  const notes = fv('f_notes');
+  if (notes) {
+    lines.push('__Additional Notes__:');
+    lines.push(notes);
+    lines.push('');
+  }
+
+  lines.push(div);
+  lines.push('[End of Ticket]');
+
+  return lines.join('\n');
+}
+
+// ─── Syntax-highlighted HTML preview ─────────────────────────────────────────
+function buildHTMLPreview() {
+  const plain = buildPlainText();
+  const div = '─'.repeat(60);
+
+  return plain
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/(SUBJECT: )(.+)/g, '<span class="out-label">$1</span><span class="out-header">$2</span>')
+    .replace(new RegExp(div.replace(/─/g,'─'),'g'), '<span class="out-divider">'+div+'</span>')
+    .replace(/(Template\s+:)(.+)/g, '<span class="out-meta">$1</span><span class="out-meta">$2</span>')
+    .replace(/(Priority\s+:)(.+)/g, (_,a,b) => {
+      const p = b.trim().toLowerCase();
+      return `<span class="out-meta">${a}</span><span class="out-priority-${p}">${b}</span>`;
+    })
+    .replace(/(Type\s+:)(.+)/g, '<span class="out-meta">$1</span><span class="out-meta">$2</span>')
+    .replace(/(Reporter\s+:)(.+)/g, '<span class="out-meta">$1</span><span class="out-meta">$2</span>')
+    .replace(/(Date\s+:)(.+)/g, '<span class="out-meta">$1</span><span class="out-meta">$2</span>')
+    .replace(/(__[^_]+__:)/g, '<span class="out-label">$1</span>')
+    .replace(/(\(not provided\)|\(none\))/g, '<span class="out-empty">$1</span>')
+    .replace(/(\[End of Ticket\])/g, '<span class="out-section">$1</span>');
+}
+
+// ─── Update All ───────────────────────────────────────────────────────────────
+function updateAll() {
+  document.getElementById('outputPreview').innerHTML = buildHTMLPreview();
+  scheduleAutosave();
+}
+
+// ─── Char Count ───────────────────────────────────────────────────────────────
+function countChars(inputId, counterId, max) {
+  const len = document.getElementById(inputId).value.length;
+  const el = document.getElementById(counterId);
+  el.textContent = `${len} / ${max}`;
+  el.className = 'char-count' + (len > max * 0.9 ? ' warn' : '') + (len >= max ? ' over' : '');
+}
+
+// ─── Validation ───────────────────────────────────────────────────────────────
+function validate() {
+  const tmpl = TEMPLATES[currentTemplate];
+  const missing = tmpl.requiredFields.filter(id => !fv(id));
+  const banner = document.getElementById('validationBanner');
+  const msg = document.getElementById('validationMsg');
+  if (missing.length) {
+    msg.textContent = `Please fill in required fields: ${missing.map(id=>{
+      const labels = {f_client:'Client/BU',f_brief:'Brief Description',f_problem:'Problem Description',f_usecase:'Use Case',f_impact:'Business Impact',f_access:'Access Needed'};
+      return labels[id]||id;
+    }).join(', ')}`;
+    banner.classList.add('show');
+    missing.forEach(id => document.getElementById(id)?.classList.add('error'));
+    return false;
+  }
+  banner.classList.remove('show');
+  tmpl.requiredFields.forEach(id => document.getElementById(id)?.classList.remove('error'));
+  return true;
+}
+
+// ─── Copy ─────────────────────────────────────────────────────────────────────
+async function copyOutput() {
+  if (!validate()) { showToast('Fill required fields first', 'warn'); return; }
+
+  const text = buildPlainText();
+  try {
+    await navigator.clipboard.writeText(text);
+    const fb = document.getElementById('copyFeedback');
+    fb.classList.add('show');
+    setTimeout(() => fb.classList.remove('show'), 1800);
+    showToast('Ticket copied to clipboard!', 'success');
+  } catch {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('Ticket copied!', 'success');
+  }
+}
+
+// ─── Clear ────────────────────────────────────────────────────────────────────
+function clearForm() {
+  if (!confirm('Clear all fields? This cannot be undone.')) return;
+  const ids = ['f_client','f_brief','f_problem','f_usecase','f_impact','f_attachments',
+               'f_repro','f_expected','f_actual','f_env','f_accept','f_access',
+               'f_datasource','f_reqdate','f_notes','f_reporter'];
+  ids.forEach(id => { const el = document.getElementById(id); if(el) { el.value=''; el.classList.remove('error'); }});
+  document.getElementById('f_date').value = TODAY;
+  setPriority('Medium', true);
+  setType(TEMPLATES[currentTemplate].defaultType, true);
+  document.querySelectorAll('.char-count').forEach(el => {
+    const max = el.textContent.split('/')[1]?.trim();
+    if (max) el.textContent = `0 / ${max}`;
+    el.className = 'char-count';
+  });
+  document.getElementById('validationBanner').classList.remove('show');
+  localStorage.removeItem('jiraBuilder_' + currentTemplate);
+  updateAll();
+  showToast('Form cleared', 'info');
+}
+
+// ─── Auto-save ────────────────────────────────────────────────────────────────
+function scheduleAutosave() {
+  const dot = document.getElementById('autosaveDot');
+  const lbl = document.getElementById('autosaveLabel');
+  dot.className = 'autosave-dot saving';
+  lbl.textContent = 'Saving…';
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    const data = {};
+    ['f_client','f_brief','f_problem','f_usecase','f_impact','f_attachments',
+     'f_repro','f_expected','f_actual','f_env','f_accept','f_access',
+     'f_datasource','f_reqdate','f_notes','f_reporter','f_date'].forEach(id => {
+       const el = document.getElementById(id);
+       if (el) data[id] = el.value;
+     });
+    data._priority = priority;
+    data._type = issueType;
+    data._template = currentTemplate;
+    try { localStorage.setItem('jiraBuilder_save', JSON.stringify(data)); } catch{}
+    dot.className = 'autosave-dot saved';
+    lbl.textContent = 'Saved';
+  }, 1000);
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem('jiraBuilder_save');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data._template && data._template !== currentTemplate) {
+      document.getElementById('templateSelect').value = data._template;
+      switchTemplate();
+    }
+    Object.entries(data).forEach(([k,v]) => {
+      if (k.startsWith('_')) return;
+      const el = document.getElementById(k);
+      if (el) el.value = v;
+    });
+    if (data._priority) setPriority(data._priority, true);
+    if (data._type) setType(data._type, true);
+  } catch {}
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function showToast(msg, type='info') {
+  const icons = {
+    success: `<svg class="toast-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`,
+    warn: `<svg class="toast-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    info: `<svg class="toast-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+  };
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = icons[type] + `<span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(t);
+  requestAnimationFrame(() => { requestAnimationFrame(() => t.classList.add('show')); });
+  setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 300);
+  }, 3000);
+}
+
+// ─── Keyboard Shortcuts ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.shiftKey && e.key === 'C') { e.preventDefault(); copyOutput(); }
+  if (e.altKey && e.key === 'r') { e.preventDefault(); clearForm(); }
+});
+</script>
+</body>
+</html>
